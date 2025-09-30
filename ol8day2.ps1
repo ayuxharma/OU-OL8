@@ -1,0 +1,514 @@
+Linux - File,Process
+|
+Binary file (or) ELF (or) Object file 
+----------------------------------------
+ |->Running //process
+
+influxdbd <== running ->we can open influxshell(user process)
+
+root@host~]# mysql -u root -p ... {enter}
+mysql>	     ---------------------------------//user process
+mysql> ... 	|	
+		backend - mysqld.service //system process
+			   |->R+
+open broswer -> IP ->Webpage  - Userprocess
+		httpd - webserver - R+ 
+
+---------------------------------------------------------
+.service - process
+.target - runlevel
+.slice - blue print of process
+...
+...
+-------------//systemD units
+systemctl
+
+systemctl -t <unitType> (ex: systemctl -t service)
+-----------------------------------------------------------
+systemctl status sshd (or) systemctl status sshd.service
+
+systemctl start sshd
+systemctl restart sshd
+systemctl stop sshd
+----------------------//executed by root user
+
+systemctl status sshd
+-----------------------//any user can able to run
+systemctl -t service
+
+systemctl status crond
+---------------------------------------------------------------
+/bin/fileA <== binary file (or) ELF - user can't able to read
+----------
+ |->Execution of this file is a process
+				........
+
+/etc/fileA.conf <== ASCII/Text file - user can able to read
+ K1=10		
+ K2=4.42
+
+TestApp <== user process - To run this application
+
+root@host~]# /bin/fileA --config=/etc/fileA.conf {Enter}
+...
+...
+
+open another window ->run TestApp
+
+create a own service file -> fileA.service
+			     ==============
+
+fileA.service --- /bin/fileA  --config=/etc/fileA.conf
+==============
+
+sshd.service  <== ASCII/Text - user can able to read
+------------
+	|--->/sbin/ssh --config=/etc/sshd.conf
+
+
+
+systemctl enable fileA.service 
+# os loading time fileA.service start automatically		
+
+systemctl start fileA.service
+Vs
+
+systemctl enable --now fileA.service <== OL8
+
+systemctl isenabled fileA.service 
+-------------------------------------------------------
+systemctl -t service
+
+systemctl status crond (or) systemctl status crond.service 
+
+oracle@gateway~]$ su - {Enter}
+password: <root user password> <== oracle
+|
+root@gateway ~]# whoami
+root
+root@gateway ~]#
+root@gateway ~]# systemctl status atd
+|
+root@gateway ~]# systemctl start atd
+|
+root@gateway ~]# systemctl status atd
+|
+root@gateway ~]# systemctl stop atd
+|
+root@gateway ~]# systemctl status atd
+=============================================================
+Convert my user process to system process
+------- ==================================
+p1 <== gcc -o p1 p1.c 
+p1.sh
+p1.py
+p1.rb
+-------//must be executable 
+
+./p1.sh (or) ./p1 (or) python3 p1.py ...
+
+step 1:  create own service file -> /etc/systemd/system/f.service
+|
+step 2: [Unit]
+	Description=
+	[Service]
+	ExecStart=/usr/bin/python3 /root/project/p1.py
+	[WantedBy]
+	Install=multi-user.target
+step 3: systemctl daemon-reload # reload the daemon
+|
+step 4: enable this service --> systemctl enable f.service 
+|
+step 5: start => systemctl start f.service
+|
+step 6: status => systemctl status f.service
+==================================================================
+root@gateway~]# pwd
+/root
+
+root@gateway~]# vi pa.sh {Enter}
+while :
+do
+  uptime >>/var/log/LB.log
+  sleep 5
+done 
+:wq
+
+root@gateway~]# ls {Enter}
+pa.sh
+root@gateway~]# ls -l pa.sh {Enter}
+-rw-r--r-- 1 .... pa.sh
+
+root@gateway~]# chmod a+x pa.sh (or) chmod 777 pa.sh
+
+root@gateway~]# ./pa.sh 
+<there is no results>
+all the results are written into /var/log/LB.log file
+ 
+press Ctrl+C - exit this current process(./pa.sh) 
+
+---------------------------------------------------------
+open another terminal --> Go to root login 
+		|
+		oracle@gateway~]$ su - {Enter}
+		..
+		root@gatway ~]# tail -f /var/log/LB.log
+
+systemctl start ab{Enter} 	......
+systemctl stop ab{Enter}	
+systemctl start ab{Enter}
+|
+vi pa.sh
+
+sleep 5 <==(old)
+sleep 3 <==(new)
+..
+:wq	
+systemctl restart ab{enter}
+	  =======
+===============================================================
+cronformat
+===========
+mints  hour day month dayofweek user command
+	    
+systemctl status crond - R+
+|
+9th Oct 8:45 AM /home/userA/project/backup.sh execute this script
+---------------- ==============================
+
+crontab -e 
+
+45 08 9 10   * userA  /home/userA/project/backup.sh 
+	(or)
+	oct
+
+:wq 
+9th Oct 8:45 AM and 6:45pm /home/userA/project/backup.sh 
+---------------- 	   ==============================
+
+45 08,18  9  oct * userA /home/userA/project/backup.sh
+   =====
+
+9th Sep and Oct 8:45 AM and 6:45pm /home/userA/project/backup.sh 
+-----------------------------------============================
+45 08,18 9 sep,oct * userA /home/userA/project/backup.sh
+
+
+9AM to 6PM =>  09-18
+
+
+
+mints  hour day month dayofweek user command
+-----------------------------------------------------
+* 09-18 * * mon-fri userA uptime >/var/log/LB.log
+-----------------------------------------------------
+* 09-18 * * mon,fri userA uptime >/var/log/LB.log
+
+* 09,18 * * mon-fri userA uptime >/var/log/LB.log
+
+/ step value
+
+
+mints  hour day month dayofweek user command
+*/2 <== every 2mts
+
+mints  hour day month dayofweek user command
+       */2 <== every 2Hrs
+-----------------------------------------------------------
+/etc/ <== Configuration directory
+
+/etc/file.conf
+/etc/Sub/file.conf
+	 ...
+restart (or) reboot
+systemctl restart file.service 
+Vs
+/proc <== Virtual directory - Size is zero(0)
+ |
+ |-... virtual files - not comes from storage device 
+ |-    .... content - current state of kernel  <==
+
+/proc/file
+	... <== 
+there is no restart (or) reboot
+there is no restarting service 
+  
+=======================================================================
+root@gateway~]# ssh host03 {enter}
+|				
+root@host03~]# whoami {enter}
+
+root@host03~]# hostname {Enter}
+
+root@host03~]# cat /etc/hostname {Enter}
+
+root@host03~]# echo "demo1" >/etc/hostname {EnteR}  <== (A)
+root@host03~]# hostname {Enter}		 	    <== (A)
+host03
+root@host03~]# cat /etc/hostname
+demo1
+root@host03~]# hostname{Enter}  
+host03
+root@host03~]# cat /proc/sys/kernel/hostname {Enter}
+						
+root@host03~]# echo "demo2" >/proc/sys/kernel/hostname {Enter} <==(B)
+root@host03~]# hostname{Enter}	<==(B)
+
+(A) Vs (B)
+root@host03~]# echo "host03.example.com" >/proc/sys/kernel/hostname {Enter}
+|
+root@host03~]# echo "host03.example.com" >/etc/hostname {Enter}
+---------------------------------------------------------------------------
+Package Management
+-------------------
+1. rpm utility
+2. yum (OL[567])
+3. dnf (OL[89])
+------------------//package management tool
+
+rpm -q <packageName> {Enter}
+<packageName>-<version>-<release>.arch
+-------------------------------------------
+
+rpm file => file format
+---------------------------
+<packageName>-<version>-<release>.arch.rpm 
+
+
+
+rpm -q <packageName>
+
+rpm -q gcc 
+
+rpm -ql gcc 
+/bin/gcc
+/etc/gcc.conf
+/var/log/gcc.log
+
+rpm -qc gcc  # config files only
+/etc/gcc.conf
+---------------------------------------------
+rpm -q bash
+rpm -q httpd
+rpm -q zsh
+
+rpm -ql bash
+
+rpm -qc bash
+
+rpm -qi bash
+
+rpm -qa |less <== page by page - PageUp PageDown Home End //keys
+				 q <== quit
+
+rpm -qa|grep ssh
+rpm -qa|grep python
+rpm -qa|grep setup
+ 
+Install => rpm -ivh <packageName>-<version>-<release>.<arch>.rpm
+		    ------------------------------------------------
+
+Uninstall/remove =>  rpm -evh <pacageName>
+e - erase 			
+
+--------------------------------------------------------------------
+root@host~]# pwd
+/root
+
+root@host~]# ls
+<empty directory>
+
+root@host~]# 
+wget https://github.com/Palanikarthikeyan/OU-OL8/blob/main/DAY-1.txt
+
+root@host~]# wget https://redhat.com/pk-version-relase.arch.rpm {Enter}	
+pk-version-relase.arch.rpm
+
+root@host~]# ls
+pk-version-relase.arch.rpm
+|
+root@host~]# rpm -ivh pk-version-relase.arch.rpm {enter}
+		      ===========================
+
+root@host~]# cd /etc
+root@host etc]# rpm -ivh pk-version-relase.arch.rpm {enter}
+
+Error - No such file pk-version-relase.arch.rpm
+
+
+Packages/
+	list of rpm files 
+
+OL-iso/
+       |->GPG-KEY 
+       |->GPG-Oracle-KEY
+       |->Packages/
+	  |->list of rpm files
+	..
+	---------------------------//CDROM  - cd content
+
+==================================================================
+create own repository 
+		|->collection of rpm - metadata  - repodata
+
+
+
+root@host~]# wget https://redhat.com/pk-version-relase.arch.rpm {Enter}	
+pk-version-relase.arch.rpm
+
+root@host~]# ls
+pk-version-relase.arch.rpm
+|
+root@host~]# rpm -ivh pk-version-relase.arch.rpm {enter}
+		      ===========================
+########## Vs
+
+root@host~]# ls {enter}
+<empty directory>
+
+root@host~]# yum install httpd {Enter}
+	       
+y - yes
+d - download
+n - not install
+------------------//optins
+
+root@host~]# yum -y install httpd {Enter}
+
+yum remove httpd
+yum update httpd
+yum list installed 
+..
+-------------------------------------------------
+yum.oracle.com <== public repository 
+-------------------------------------
+
+root@host~]# yum install irb {Enter}
+	     |
+	   /etc/yum.repos.d/public-yum-filename.repo
+					|
+					[repoID]
+					name=<Name of the repository>
+					base_url = <map repo url>			enabled=1 <== allow to download pacakge from repository
+		gpgkey_file="/etc/.."
+		gpgcheck=1
+-----------------------------------------------------------------------------
+
+Login as: userA
+password: <userAlogin-password>
+|
+userA@host~]$ whoami
+userA
+userA@host~]$ systemctl start crond
+<permission denied>
+
+userA@host~]$ mkdir /D1
+<permission denied>
+
+userA@host~]$ pwd
+/home/userA
+
+userA@host~]$ su - {Enter}
+password: <root-user-password>
+|
+root@host~]# <command> ----->/root/.bash_history 
+	      			    =============
+------
+
+root@host~]# visudo
+root  (ALL)
+|
+userA (ALL)
+
+|
+userA@host~]$ sudo mkdir /D1
+	      =================> /home/userA/.bash_history
+
+-------------------------------------------------------------------------
+File - Data - Under the storage unit
+
+File Structure 
+---------------
+ |->Tree structure
+			/
+			|
+	-----------------------------
+	|	|	| ..	    |
+	/bin   /etc  ..
+
+Filesystem
+------------
+  |->Data Structure - Info about file
+			|->where file is located?
+			|->sector range
+			...
+			-------------//meta-data
+
+ BootBlock |SuperBlock| InodeBlock |DataBlock
+ ....
+
+Plain text ->  Hello <== user view
+|
+metadata  -> ...... <== Kernel view(Filesystem)
+|
+rawdata --> 10101 <== Hardware (HD)
+
+
+
+
+
+/proc		/	   /media  /mnt ..  <== mount point (or) directory
+
+--------------------------------------
+proc 		ext4/xfs  is9660  nfs vfat <== filesystem-Types
+|		|	    |	   |    |
+|		|	    |	   |	|____ windows...
+CPU,RAM		HardDisk   CDROM   network
+
+ +---------------------------------+
+ |   Chapters 	  |	pageNumber |
+ +-----------------------------------
+ | Introduction   |        1
+ | about OS       |
+ +----------------------------------
+ | FileManagement |        15
+ +------------------------------------
+ | ProcessManagement|  23
+ +--------------------------------------
+ | MemoryManagement | 49
+ +-------------------------------------
+ | DeviceManagmenet | 123
+ +--------------------------------------+
+
+fdisk -l
+
+cat /proc/partitions
+
+create a filesystem --> /dev/xvdb1
+			----------
+		
+mkfs.xfs  /dev/xvdb1 (or) mkfs -t xfs /dev/xvdb1  - create a filesystem
+|
+mkdir /D1  <== create a mountpoint
+|
+mount /dev/xvdb1 /D1 
+
+
+df -Th
+
+end user => cd /D1
+	    vi ...
+	    ...
+-------------------------------------------------------------------------
+journalctl 
+journalctl -r 
+journalctl -n 5
+
+journalctl -p info
+	   -p err
+	   -p warn
+           
+journalctl -u sshd
+	   -u network
+	   -u ab
+-------------------------------------------------------------------------
